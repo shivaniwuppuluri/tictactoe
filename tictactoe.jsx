@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { Heart, X, Volume2, VolumeX, Music } from 'lucide-react';
+import React, { useState } from 'react';
+import { Heart, X } from 'lucide-react';
 
 const GameStatus = {
   PLAYING: 'playing',
@@ -7,14 +7,6 @@ const GameStatus = {
   LOSE: 'lose',
   DRAW: 'draw'
 };
-
-// Added music tracks
-const MUSIC_TRACKS = [
-  {
-    name: "Gentle Romance",
-    url: "https://cdn.pixabay.com/download/audio/2022/05/27/audio_1808fbf07a.mp3"
-  }
-];
 
 const Modal = ({ isOpen, onClose, status, message, onPlayAgain }) => {
   if (!isOpen) return null;
@@ -50,44 +42,9 @@ const Modal = ({ isOpen, onClose, status, message, onPlayAgain }) => {
           }}
           className="w-full py-2 bg-pink-500 text-white rounded-lg hover:bg-pink-600 transition-colors"
         >
-          Yes!!
+          Play Again
         </button>
       </div>
-    </div>
-  );
-};
-
-const MusicSelector = ({ onSelect, currentTrack, isPlaying }) => {
-  const [isOpen, setIsOpen] = useState(false);
-
-  return (
-    <div className="relative">
-      <button
-        onClick={() => setIsOpen(!isOpen)}
-        className="p-2 rounded-full hover:bg-pink-200 transition-colors flex items-center gap-2"
-      >
-        <Music className="w-6 h-6 text-pink-600" />
-        <span className="text-sm text-pink-600"></span>
-      </button>
-      
-      {isOpen && (
-        <div className="absolute top-full right-0 mt-2 bg-white rounded-lg shadow-lg p-2 w-48">
-          {MUSIC_TRACKS.map((track, index) => (
-            <button
-              key={index}
-              onClick={() => {
-                onSelect(track);
-                setIsOpen(false);
-              }}
-              className={`w-full text-left px-3 py-2 rounded hover:bg-pink-50 text-sm ${
-                currentTrack?.name === track.name ? 'text-pink-600 font-medium' : 'text-gray-700'
-              }`}
-            >
-              {track.name}
-            </button>
-          ))}
-        </div>
-      )}
     </div>
   );
 };
@@ -98,35 +55,6 @@ const TicTacToe = () => {
   const [showModal, setShowModal] = useState(false);
   const [lastMove, setLastMove] = useState(null);
   const [isThinking, setIsThinking] = useState(false);
-  const [isMusicPlaying, setIsMusicPlaying] = useState(false);
-  const [currentTrack, setCurrentTrack] = useState(MUSIC_TRACKS[0]);
-  const [audio] = useState(new Audio(MUSIC_TRACKS[0].url));
-
-  useEffect(() => {
-    audio.loop = true;
-    return () => {
-      audio.pause();
-      audio.currentTime = 0;
-    };
-  }, [audio]);
-
-  const toggleMusic = () => {
-    if (isMusicPlaying) {
-      audio.pause();
-    } else {
-      audio.play();
-    }
-    setIsMusicPlaying(!isMusicPlaying);
-  };
-
-  const changeTrack = (track) => {
-    const wasPlaying = !audio.paused;
-    audio.src = track.url;
-    setCurrentTrack(track);
-    if (wasPlaying) {
-      audio.play();
-    }
-  };
 
   const messages = {
     [GameStatus.WIN]: "You win a Valentine's date with me! yoohoo!",
@@ -170,34 +98,33 @@ const TicTacToe = () => {
     
     const newSquares = [...squares];
     
-    // Reduced AI intelligence - only block obvious wins and make more random moves
-    
-    // Block player's winning move (50% chance)
-    if (Math.random() > 0.5) {
-      for (let i of emptySquares) {
-        const testBoard = [...squares];
-        testBoard[i] = 'X';
-        if (checkWinner(testBoard) === 'X') {
-          newSquares[i] = 'O';
-          return newSquares;
-        }
+    // Check if AI can win
+    for (let i of emptySquares) {
+      const testBoard = [...squares];
+      testBoard[i] = 'O';
+      if (checkWinner(testBoard) === 'O') {
+        newSquares[i] = 'O';
+        return newSquares;
       }
     }
     
-    // Take center only 30% of the time
-    if (squares[4] === null && Math.random() < 0.3) {
+    // Block player's winning move
+    for (let i of emptySquares) {
+      const testBoard = [...squares];
+      testBoard[i] = 'X';
+      if (checkWinner(testBoard) === 'X') {
+        newSquares[i] = 'O';
+        return newSquares;
+      }
+    }
+    
+    // Take center if available
+    if (squares[4] === null) {
       newSquares[4] = 'O';
       return newSquares;
     }
     
-    // Random move with higher probability
-    if (Math.random() < 0.7) {
-      const randomIndex = Math.floor(Math.random() * emptySquares.length);
-      newSquares[emptySquares[randomIndex]] = 'O';
-      return newSquares;
-    }
-    
-    // If no random move, take any available corner
+    // Take corners
     const corners = [0, 2, 6, 8].filter(i => squares[i] === null);
     if (corners.length > 0) {
       const randomCorner = corners[Math.floor(Math.random() * corners.length)];
@@ -205,7 +132,15 @@ const TicTacToe = () => {
       return newSquares;
     }
     
-    // Fallback to any available move
+    // Take any available edge
+    const edges = [1, 3, 5, 7].filter(i => squares[i] === null);
+    if (edges.length > 0) {
+      const randomEdge = edges[Math.floor(Math.random() * edges.length)];
+      newSquares[randomEdge] = 'O';
+      return newSquares;
+    }
+    
+    // Fallback to random move
     const randomIndex = Math.floor(Math.random() * emptySquares.length);
     newSquares[emptySquares[randomIndex]] = 'O';
     return newSquares;
@@ -277,28 +212,9 @@ const TicTacToe = () => {
   return (
     <div className="w-full min-h-screen bg-pink-100 flex items-center justify-center">
       <div className="flex flex-col items-center justify-center p-4">
-        <div className="flex items-center justify-between w-full max-w-md mb-4">
-          <h1 className="text-3xl font-bold text-pink-600">
-            Tic-Tac-Toe
-          </h1>
-          <div className="flex items-center gap-4">
-            <MusicSelector 
-              onSelect={changeTrack}
-              currentTrack={currentTrack}
-              isPlaying={isMusicPlaying}
-            />
-            <button
-              onClick={toggleMusic}
-              className="p-2 rounded-full hover:bg-pink-200 transition-colors"
-            >
-              {isMusicPlaying ? (
-                <Volume2 className="w-6 h-6 text-pink-600" />
-              ) : (
-                <VolumeX className="w-6 h-6 text-pink-600" />
-              )}
-            </button>
-          </div>
-        </div>
+        <h1 className="text-3xl font-bold text-pink-600 mb-8">
+          Tic-tac-toe
+        </h1>
         <div className="text-lg text-pink-600 mb-4">
           You are "X" and I am "❤️". Let's play!
         </div>
