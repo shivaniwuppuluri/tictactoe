@@ -238,8 +238,11 @@ const TicTacToe = () => {
       setIsThinking(false);
 
       if (checkWinner(aiBoard) === 'O') {
-        setGameStatus(GameStatus.LOSE);
-        setShowModal(true);
+        // Add delay before showing the win message
+        setTimeout(() => {
+          setGameStatus(GameStatus.LOSE);
+          setShowModal(true);
+        }, 500); // 0.5 second delay
         return;
       }
 
@@ -250,6 +253,7 @@ const TicTacToe = () => {
     }, 1000);
   };
 
+  
   const renderSquare = (index) => {
     const isLastMove = lastMove === index;
     return (
